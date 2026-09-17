@@ -1,0 +1,2567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>MsgMagnet — AI Networking & Smart CRM Hub</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #121826;
+      --card-border: #1f293d;
+      --accent: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #2563eb, #7c3aed);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --sidebar-width: 260px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow-x: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #0d1322;
+      border-right: 1px solid var(--card-border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 20px;
+    }
+    .logo-area img { height: 38px; border-radius: 8px; }
+    .logo-area h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-area span { color: var(--accent); }
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active { background: var(--accent-gradient); color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+
+    /* Main Content */
+    .main-content {
+      flex-grow: 1;
+      padding: 28px 36px;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent-gradient); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.06); }
+    .btn-success { background: #10b981; color: #fff; }
+
+    /* Views */
+    .view-panel { display: none; }
+    .view-panel.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards & Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px;
+      position: relative;
+    }
+    .card-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    /* Form inputs */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--accent); }
+
+    /* Upload Dropzone */
+    .dropzone {
+      border: 2px dashed #2a3852;
+      border-radius: 16px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: #0c121e;
+      transition: all 0.2s;
+    }
+    .dropzone:hover { border-color: var(--accent); background: #0f172a; }
+    .dropzone .icon { font-size: 44px; margin-bottom: 10px; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-hot { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .badge-warm { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .badge-cold { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+    /* Kanban Board */
+    .kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+    .kanban-col {
+      min-width: 280px;
+      width: 280px;
+      background: #0d1424;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 180px);
+    }
+    .kanban-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 14px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .kanban-items { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; }
+    .kanban-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: grab;
+      transition: all 0.15s;
+    }
+    .kanban-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    /* Map container */
+    #networkMap { height: 580px; border-radius: 16px; width: 100%; border: 1px solid var(--card-border); }
+
+    /* Table */
+    .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .custom-table th { padding: 12px 16px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--card-border); }
+    .custom-table td { padding: 14px 16px; border-bottom: 1px solid var(--card-border); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-area">
+      <img src="/media/msgmagnet_logo.png" alt="MsgMagnet Logo" onerror="this.src='/logo192.png'">
+      <div>
+        <h2>Msg<span>Magnet</span></h2>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:600;">AI Networking Suite</div>
+      </div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="switchTab('scanner')">
+        <span class="icon">📇</span> AI Card Scanner
+      </li>
+      <li class="nav-item" onclick="switchTab('batch')">
+        <span class="icon">📥</span> Batch Card Scan
+      </li>
+      <li class="nav-item" onclick="switchTab('profile')">
+        <span class="icon">👤</span> Digital Profile & NFC
+      </li>
+      <li class="nav-item" onclick="switchTab('shared')">
+        <span class="icon">🤝</span> Viral Shared Links
+      </li>
+      <li class="nav-item" onclick="switchTab('pipeline')">
+        <span class="icon">📊</span> Lead Kanban Pipeline
+      </li>
+      <li class="nav-item" onclick="switchTab('events')">
+        <span class="icon">🎪</span> Event Workspaces
+      </li>
+      <li class="nav-item" onclick="switchTab('tasks')">
+        <span class="icon">🎙️</span> Voice-to-Task CRM
+      </li>
+      <li class="nav-item" onclick="switchTab('google')">
+        <span class="icon">🔗</span> Google Workspace
+      </li>
+      <li class="nav-item" onclick="switchTab('email')">
+        <span class="icon">✉️</span> Email Templates
+      </li>
+      <li class="nav-item" onclick="switchTab('aicopilot')">
+        <span class="icon">💡</span> AI Chat Copilot
+      </li>
+      <li class="nav-item" onclick="switchTab('referrals')">
+        <span class="icon">🎁</span> Referral Rewards
+      </li>
+      <li class="nav-item" onclick="switchTab('map')">
+        <span class="icon">🗺️</span> Network Geo-Map
+      </li>
+      <li class="nav-item" onclick="switchTab('fairusage')">
+        <span class="icon">⚡</span> Fair Usage & AI Quota
+      </li>
+      <li class="nav-item" onclick="switchTab('mobileapp')">
+        <span class="icon">📱</span> iOS & Android App
+      </li>
+      <li class="nav-item" onclick="switchTab('agents')">
+        <span class="icon">👥</span> Team Round-Robin
+      </li>
+      <li class="nav-item" onclick="switchTab('connectors')">
+        <span class="icon">🔌</span> CRM Connectors
+      </li>
+      <li class="nav-item" onclick="switchTab('reviver')">
+        <span class="icon">🔄</span> Ghosting Reviver
+      </li>
+      <li class="nav-item" onclick="switchTab('signatures')">
+        <span class="icon">✍️</span> Email Signatures
+      </li>
+      <li class="nav-item" onclick="switchTab('community')">
+        <span class="icon">📢</span> B2B Community & Leads
+      </li>
+      <li class="nav-item" onclick="switchTab('templates')">
+        <span class="icon">📚</span> Sales Script Vault
+      </li>
+    </ul>
+
+    <div style="padding-top:16px;border-top:1px solid var(--card-border);">
+      <a href="/" class="btn btn-secondary" style="width:100%;justify-content:center;font-size:13px;">
+        ← Back to WhatsApp CRM
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- 1. AI Card Scanner View -->
+    <section id="view-scanner" class="view-panel active">
+      <div class="header">
+        <div>
+          <h1>AI Business Card Scanner</h1>
+          <p>Scan business cards instantly using Gemini Vision AI. Auto-creates CRM contact & sends WhatsApp intro.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>📸</span> Upload or Snap Card</div>
+          
+          <input type="file" id="cardFileInput" accept="image/*" style="display:none;" onchange="handleCardUpload(event)">
+          
+          <div class="dropzone" onclick="document.getElementById('cardFileInput').click()">
+            <div class="icon">📥</div>
+            <h3 style="font-size:16px;font-weight:700;">Click to upload or take a photo</h3>
+            <p style="color:var(--text-muted);font-size:13px;margin-top:6px;">Supports JPG, PNG, WEBP (iPhone & Android camera ready)</p>
+          </div>
+
+          <div id="scanPreviewBox" style="display:none;margin-top:18px;text-align:center;">
+            <img id="scanPreviewImg" src="" style="max-height:180px;border-radius:12px;border:1px solid var(--card-border);">
+          </div>
+
+          <div style="margin-top:18px;">
+            <div class="form-group">
+              <label>Associate with Event Workspace (Optional)</label>
+              <select id="scanEventSelect" class="form-control">
+                <option value="">-- Select Event --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Lead Temperature</label>
+              <select id="scanTemperatureSelect" class="form-control">
+                <option value="hot">🔥 Hot Lead (Urgent Follow-up)</option>
+                <option value="warm" selected>⚡ Warm Lead (Interested)</option>
+                <option value="cold">❄️ Cold Lead (General Network)</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <input type="checkbox" id="scanAutoWhatsApp" checked style="width:18px;height:18px;accent-color:var(--accent);">
+              <label for="scanAutoWhatsApp" style="font-size:13px;font-weight:600;cursor:pointer;">
+                Send automated WhatsApp welcome message with my Digital Card
+              </label>
+            </div>
+
+            <button class="btn btn-primary" id="btnRunScan" onclick="executeScan()" style="width:100%;justify-content:center;padding:14px;">
+              ✨ Run AI Scanner & Add to CRM
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📋</span> Extracted Lead Information</div>
+          <div id="scanResultPlaceholder" style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+            <div style="font-size:40px;margin-bottom:12px;">📇</div>
+            <p>Upload a card on the left to see live structured Gemini Vision parsing here.</p>
+          </div>
+
+          <div id="scanResultContent" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <h2 id="resName" style="font-size:20px;font-weight:800;">John Doe</h2>
+              <span id="resTempBadge" class="badge badge-warm">Warm</span>
+            </div>
+
+            <p id="resTitleCompany" style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">CEO at Acme Corp</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+              <div><strong>📱 Mobile:</strong> <span id="resMobile">--</span></div>
+              <div><strong>✉️ Email:</strong> <span id="resEmail">--</span></div>
+              <div><strong>🌐 Website:</strong> <span id="resWebsite">--</span></div>
+              <div><strong>📍 City:</strong> <span id="resCity">--</span></div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <strong>🏢 Address:</strong>
+              <p id="resAddress" style="color:var(--text-muted);font-size:13px;margin-top:4px;">--</p>
+            </div>
+
+            <div style="margin-top:16px;">
+              <strong>💡 Notes / Services:</strong>
+              <p id="resNotes" style="color:var(--text-muted);font-size:13px;margin-top:4px;">--</p>
+            </div>
+
+            <div style="margin-top:24px;display:flex;gap:10px;">
+              <a id="resWhatsAppBtn" href="#" target="_blank" class="btn btn-success" style="flex:1;justify-content:center;">
+                💬 Open WhatsApp Chat
+              </a>
+              <button class="btn btn-secondary" onclick="switchTab('pipeline')">
+                View in Pipeline →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Digital Profile & NFC Studio View -->
+    <section id="view-profile" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Digital Profile & NFC Card Studio</h1>
+          <p>Design your dynamic digital business card. Share via QR code, NFC tap, or custom link.</p>
+        </div>
+        <div>
+          <a id="viewLiveProfileBtn" href="#" target="_blank" class="btn btn-primary">
+            👁️ Open Live Profile (/p/:username)
+          </a>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>✏️</span> Profile Details</div>
+          
+          <div class="form-group">
+            <label>Username / Handle (slug)</label>
+            <input type="text" id="profUsername" class="form-control" placeholder="e.g. alex_vance">
+          </div>
+
+          <div class="form-group">
+            <label>Full Display Name</label>
+            <input type="text" id="profDisplayName" class="form-control" placeholder="e.g. Alex Vance">
+          </div>
+
+          <div class="grid-2" style="gap:12px;">
+            <div class="form-group">
+              <label>Job Title</label>
+              <input type="text" id="profTitle" class="form-control" placeholder="e.g. Founder & CEO">
+            </div>
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="profCompany" class="form-control" placeholder="e.g. MsgMagnet Inc.">
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:12px;">
+            <div class="form-group">
+              <label>WhatsApp Number</label>
+              <input type="text" id="profWhatsApp" class="form-control" placeholder="e.g. +919876543210">
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="profEmail" class="form-control" placeholder="e.g. alex@msgmagnet.com">
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:12px;">
+            <div class="form-group">
+              <label>Website URL</label>
+              <input type="text" id="profWebsite" class="form-control" placeholder="https://msgmagnet.com">
+            </div>
+            <div class="form-group">
+              <label>Location (City, Country)</label>
+              <input type="text" id="profLocation" class="form-control" placeholder="e.g. Bengaluru, India">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Bio / About Me</label>
+            <textarea id="profBio" class="form-control" rows="3" placeholder="A short intro for people who view your profile..."></textarea>
+          </div>
+
+          <div class="grid-2" style="gap:12px;margin-bottom:14px;">
+            <div class="form-group">
+              <label>Persona Type</label>
+              <select id="profPersonaType" class="form-control" onchange="loadProfile()">
+                <option value="corporate">🏢 Corporate Identity</option>
+                <option value="freelance">🚀 Freelance & Consulting</option>
+                <option value="personal">👤 Personal Identity</option>
+              </select>
+            </div>
+            <div class="form-group" style="display:flex;flex-direction:column;justify-content:center;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:14px;">
+                <input type="checkbox" id="profLeadCaptureMode" style="width:18px;height:18px;">
+                <span style="font-weight:700;color:#93c5fd;">Reciprocal Swap Wall</span>
+              </label>
+              <span style="font-size:11px;color:var(--text-muted);">Require contact exchange before full reveal</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveProfile()" style="width:100%;justify-content:center;padding:12px;">
+            💾 Save & Update Digital Profile Persona
+          </button>
+        </div>
+
+        <div class="card" style="text-align:center;">
+          <div class="card-title"><span>📱</span> Share via QR Code & NFC</div>
+          
+          <div style="background:#fff;padding:16px;border-radius:16px;display:inline-block;margin:20px 0;">
+            <img id="profQrImg" src="" style="width:200px;height:200px;display:block;">
+          </div>
+
+          <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
+            Scan with any phone camera or write to an NFC tag card!
+          </p>
+
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <a id="downloadQrBtn" download="my_qr_code.png" href="#" class="btn btn-secondary">
+              📥 Download QR PNG
+            </a>
+            <a id="downloadVcardBtn" href="#" class="btn btn-secondary">
+              📲 Download .vcf Card
+            </a>
+            <a id="appleWalletPassBtn" href="#" target="_blank" class="btn btn-secondary" style="background:#000;color:#fff;">
+               Apple Wallet (.pkpass)
+            </a>
+            <a id="googleWalletPassBtn" href="#" target="_blank" class="btn btn-secondary" style="background:#1e293b;color:#f8fafc;">
+              💳 Google Wallet Pass
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Lead Pipeline Kanban View -->
+    <section id="view-pipeline" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Lead Pipeline & Kanban</h1>
+          <p>Track leads across your sales funnel from initial scan to closed deal.</p>
+        </div>
+      </div>
+
+      <div class="kanban-board" id="kanbanBoardContainer">
+        <!-- Columns rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- 4. Event Workspaces View -->
+    <section id="view-events" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Event Workspaces</h1>
+          <p>Organize conferences, expos, and summits. Group and export all leads captured per event.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openNewEventModal()">
+          ➕ Create New Event
+        </button>
+      </div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <table class="custom-table" id="eventsTable">
+          <thead>
+            <tr>
+              <th>Event Name</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Total Leads</th>
+              <th>Hot Leads</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTableBody">
+            <!-- Events rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. Voice-to-Task CRM View -->
+    <section id="view-tasks" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Voice-to-Task & Smart CRM</h1>
+          <p>Speak to your CRM. Gemini Audio extracts tasks, follow-ups, and pipeline updates automatically.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>🎙️</span> Record or Upload Voice Note</div>
+          
+          <div style="text-align:center;padding:30px 10px;">
+            <button id="btnRecordVoice" class="btn btn-primary" onclick="toggleVoiceRecording()" style="padding:16px 28px;border-radius:50px;font-size:16px;">
+              🔴 Start Recording (Mic)
+            </button>
+            <div id="recordingTimer" style="margin-top:12px;font-size:14px;color:var(--danger);font-weight:700;display:none;">
+              Recording... (Speak your follow-up notes)
+            </div>
+          </div>
+
+          <div style="text-align:center;margin:10px 0;color:var(--text-muted);font-size:12px;">— OR UPLOAD AUDIO FILE —</div>
+
+          <input type="file" id="voiceFileInput" accept="audio/*" class="form-control" onchange="uploadVoiceFile(event)">
+          <div id="voiceProcessStatus" style="margin-top:14px;font-size:13px;color:var(--accent);display:none;">
+            ⏳ Processing voice note with Gemini Audio AI...
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>✅</span> Active Follow-up Tasks</div>
+          <div id="tasksListContainer" style="display:flex;flex-direction:column;gap:12px;max-height:480px;overflow-y:auto;">
+            <!-- Tasks rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Network Geo-Map View -->
+    <section id="view-map" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Network Geo-Map</h1>
+          <p>Interactive geographic visualization of your contacts, meetings, and networking events.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;"><span>🗺️</span> Google Maps & Geographic Intelligence</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <label style="font-size:12px;color:var(--text-muted);font-weight:600;">Map Engine:</label>
+            <select id="mapLayerSelect" class="form-control" style="width:210px;padding:6px 10px;font-size:13px;" onchange="changeMapLayer(this.value)">
+              <option value="google_roadmap">Google Maps (Roadmap)</option>
+              <option value="google_hybrid">Google Maps (Satellite Hybrid)</option>
+              <option value="google_terrain">Google Maps (Terrain)</option>
+              <option value="osm">OpenStreetMap</option>
+            </select>
+          </div>
+        </div>
+        <div id="networkMap"></div>
+      </div>
+    </section>
+
+    <!-- 7. Batch Card Scanner View -->
+    <section id="view-batch" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Batch AI Card Scanner</h1>
+          <p>Scan up to 10 business cards simultaneously. Ideal for post-conference lead processing.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>📥</span> Bulk Card Upload</div>
+        <input type="file" id="batchFileInput" multiple accept="image/*" class="form-control" onchange="handleBatchSelect(event)">
+        <p style="color:var(--text-muted);font-size:13px;margin:10px 0 16px;">Select multiple card images (Ctrl/Cmd + click). Up to 10 at once.</p>
+
+        <div id="batchPreviewGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;margin-bottom:16px;"></div>
+
+        <button class="btn btn-primary" id="btnRunBatch" onclick="executeBatchScan()" style="width:100%;justify-content:center;padding:14px;">
+          🚀 Run Batch AI Scanner on All Cards
+        </button>
+
+        <div id="batchResultsTableBox" style="display:none;margin-top:24px;">
+          <h3 style="font-size:16px;margin-bottom:12px;">Batch Processing Results:</h3>
+          <table class="custom-table">
+            <thead>
+              <tr><th>Name</th><th>Company</th><th>Mobile</th><th>Email</th><th>Status</th></tr>
+            </thead>
+            <tbody id="batchResultsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Viral Shared Cards View (/s/:token) -->
+    <section id="view-shared" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Viral Shared Card Links (/s/:token)</h1>
+          <p>Create shareable card exchange links with reciprocal lead capture forms.</p>
+        </div>
+        <button class="btn btn-primary" onclick="createSharedLink()">
+          ➕ Generate New Shared Link
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>🔗</span> Active Viral Share Links</div>
+        <div id="sharedLinksBox" style="display:flex;flex-direction:column;gap:12px;">
+          <p style="color:var(--text-muted);">Click 'Generate New Shared Link' above to create your viral reciprocal contact exchange link.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Google Workspace Sync View -->
+    <section id="view-google" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Google Workspace Integration</h1>
+          <p>Synchronize your leads to Google Sheets and auto-schedule appointments to Google Calendar.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>📊</span> Google Sheets Lead Sync</div>
+          <div class="form-group">
+            <label>Target Spreadsheet ID or Name</label>
+            <input type="text" id="gSheetId" class="form-control" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+          </div>
+          <div class="form-group">
+            <label>Sheet Tab Name</label>
+            <input type="text" id="gSheetTab" class="form-control" value="MsgMagnet Leads">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0;">
+            <label><input type="checkbox" id="gSyncSheets" checked> Auto-sync new card scans to Sheets</label>
+            <label><input type="checkbox" id="gSyncContacts" checked> Sync to Google Contacts</label>
+            <label><input type="checkbox" id="gSyncCalendar" checked> Sync follow-up tasks to Google Calendar</label>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="saveGoogleConfig()" style="flex:1;justify-content:center;">
+              💾 Save Settings
+            </button>
+            <button class="btn btn-secondary" onclick="previewSheetsData()">
+              📥 Export Rows Preview
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📅</span> Google Calendar Quick Scheduler</div>
+          <div class="form-group">
+            <label>Meeting / Follow-up Title</label>
+            <input type="text" id="gCalTitle" class="form-control" placeholder="e.g. Partnership Demo with John Doe">
+          </div>
+          <div class="form-group">
+            <label>Date & Time</label>
+            <input type="datetime-local" id="gCalTime" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Description / Agenda</label>
+            <textarea id="gCalDesc" class="form-control" rows="2" placeholder="Discuss WhatsApp automation and licensing terms"></textarea>
+          </div>
+          <button class="btn btn-success" onclick="scheduleGoogleCalendar()" style="width:100%;justify-content:center;padding:12px;">
+            🗓️ Schedule on Google Calendar & CRM Tasks
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Email Templates & Direct Sending View -->
+    <section id="view-email" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Email Templates & Follow-up</h1>
+          <p>Create personalized HTML email templates with variables like {{name}} and {{profile_url}}.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>✉️</span> Template Builder</div>
+          <div class="form-group">
+            <label>Template Title</label>
+            <input type="text" id="emailTmplTitle" class="form-control" placeholder="e.g. Post-Event Follow-up">
+          </div>
+          <div class="form-group">
+            <label>Subject Line</label>
+            <input type="text" id="emailTmplSubject" class="form-control" placeholder="Great meeting you at the summit, {{name}}!">
+          </div>
+          <div class="form-group">
+            <label>HTML Content Body (supports {{name}}, {{company}}, {{profile_url}})</label>
+            <textarea id="emailTmplBody" class="form-control" rows="6" placeholder="<p>Hi {{name}},</p><p>It was a pleasure connecting with you. Here are my digital card details: {{profile_url}}</p><p>Best regards,<br>MsgMagnet Team</p>"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveEmailTemplate()" style="width:100%;justify-content:center;">
+            💾 Save Email Template
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🚀</span> Send Test / Quick Email</div>
+          <div class="form-group">
+            <label>Recipient Email</label>
+            <input type="email" id="sendEmailTo" class="form-control" placeholder="client@example.com">
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="sendEmailSubject" class="form-control" placeholder="Quick follow-up from MsgMagnet">
+          </div>
+          <div class="form-group">
+            <label>Message Content</label>
+            <textarea id="sendEmailBody" class="form-control" rows="4" placeholder="Hello, wanted to check in regarding your WhatsApp automation requirements..."></textarea>
+          </div>
+          <button class="btn btn-success" onclick="executeSendEmail()" style="width:100%;justify-content:center;padding:12px;">
+            📨 Send Email via SMTP
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. AI Chat Copilot View -->
+    <section id="view-aicopilot" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>AI Sales Chat Copilot</h1>
+          <p>Paste any prospect WhatsApp message to generate 3 smart, high-converting replies using Gemini.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>💬</span> Incoming Message Context</div>
+          <div class="form-group">
+            <label>Contact Name (Optional)</label>
+            <input type="text" id="aiCopilotName" class="form-control" placeholder="e.g. David Smith">
+          </div>
+          <div class="form-group">
+            <label>Company (Optional)</label>
+            <input type="text" id="aiCopilotCompany" class="form-control" placeholder="e.g. Acme Tech">
+          </div>
+          <div class="form-group">
+            <label>Incoming WhatsApp Message *</label>
+            <textarea id="aiCopilotMsg" class="form-control" rows="4" placeholder="e.g. Can you share pricing for the WhatsApp broadcast and flow builder? What about support?"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="generateAiReplies()" style="width:100%;justify-content:center;padding:12px;">
+            ✨ Generate 3 Smart Replies with Gemini
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>💡</span> Smart Suggested Replies</div>
+          <div id="aiReplySuggestionsBox" style="display:flex;flex-direction:column;gap:12px;">
+            <p style="color:var(--text-muted);text-align:center;padding:40px 10px;">Enter an incoming message on the left and click 'Generate'.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Referral & Rewards View -->
+    <section id="view-referrals" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Referral Program & Growth Rewards</h1>
+          <p>Share your unique referral link to earn recurring commission and bonus credits.</p>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-bottom:24px;">
+        <div class="card">
+          <div style="font-size:13px;color:var(--text-muted);font-weight:700;">MY REFERRAL CODE</div>
+          <div id="refCodeDisplay" style="font-size:24px;font-weight:800;color:var(--accent);margin-top:6px;">--</div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text-muted);font-weight:700;">TOTAL SIGNUPS</div>
+          <div id="refSignupsDisplay" style="font-size:24px;font-weight:800;color:var(--success);margin-top:6px;">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text-muted);font-weight:700;">COMMISSION EARNED</div>
+          <div id="refEarnedDisplay" style="font-size:24px;font-weight:800;color:var(--warning);margin-top:6px;">₹0.00</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>🔗</span> My Referral Link</div>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="refLinkInput" readonly class="form-control" value="Loading...">
+          <button class="btn btn-secondary" onclick="copyRefLink()">
+            📋 Copy Link
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Fair Usage & AI Quota View -->
+    <section id="view-fairusage" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Fair Usage & Resource Metering</h1>
+          <p>Monitor your organization's AI scan usage, voice-to-CRM limits, and billing cycle credits.</p>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-bottom:24px;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:13px;color:var(--text-muted);font-weight:700;">GEMINI CARD SCANS</div>
+            <span id="fairScansBadge" class="badge badge-warm">Pro Tier</span>
+          </div>
+          <div id="fairScansCount" style="font-size:26px;font-weight:800;color:#fff;">0 / 500</div>
+          <div style="background:#090d16;border-radius:6px;height:8px;margin-top:12px;overflow:hidden;">
+            <div id="fairScansBar" style="width:0%;height:100%;background:var(--accent);border-radius:6px;transition:width 0.4s;"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:13px;color:var(--text-muted);font-weight:700;">VOICE-TO-CRM AI</div>
+            <span class="badge badge-cold">Audio</span>
+          </div>
+          <div id="fairVoiceCount" style="font-size:26px;font-weight:800;color:#c084fc;">0 / 120 mins</div>
+          <div style="background:#090d16;border-radius:6px;height:8px;margin-top:12px;overflow:hidden;">
+            <div id="fairVoiceBar" style="width:0%;height:100%;background:#a855f7;border-radius:6px;transition:width 0.4s;"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:13px;color:var(--text-muted);font-weight:700;">CRM CONTACTS STORED</div>
+            <span class="badge badge-hot">Storage</span>
+          </div>
+          <div id="fairContactsCount" style="font-size:26px;font-weight:800;color:#4ade80;">0 / 5000</div>
+          <div style="background:#090d16;border-radius:6px;height:8px;margin-top:12px;overflow:hidden;">
+            <div id="fairContactsBar" style="width:0%;height:100%;background:#10b981;border-radius:6px;transition:width 0.4s;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>⚙️</span> Global Contact Preferences</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;">
+          <div>
+            <div style="font-weight:700;color:#fff;font-size:15px;">Contact Display Name Format</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Format how contacts appear across Web CRM, Mobile App, and exported CSVs</div>
+          </div>
+          <select id="prefNameFormat" class="form-control" style="width:220px;" onchange="alert('Display name format updated to: ' + this.options[this.selectedIndex].text)">
+            <option value="first_last">First Last (e.g. John Doe)</option>
+            <option value="last_first">Last, First (e.g. Doe, John)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. Mobile App View -->
+    <section id="view-mobileapp" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>MsgMagnet Mobile App (iOS & Android)</h1>
+          <p>Native mobile companion built with React Native & Expo SDK 52. Seamless on-the-go card scanning, offline mode, and NFC sharing.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>📱</span> Native Mobile Features</div>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:12px;color:#cbd5e1;font-size:14px;">
+            <li>📸 <strong>Viewfinder Camera & Edge Detection:</strong> Frame business cards perfectly with illuminated bounding box.</li>
+            <li>📥 <strong>Offline Mode with SQLite:</strong> Keep scanning and adding tasks at events without internet; auto-syncs when online.</li>
+            <li>⚡ <strong>Physical NFC Tag Writer:</strong> Write your digital business card directly onto NFC plastic cards or tags on tap.</li>
+            <li>🎙️ <strong>Voice-to-CRM:</strong> Tap the mic and speak notes; Gemini AI transcribes and structures tasks automatically.</li>
+            <li>🗺️ <strong>Geo-Networking Map:</strong> Plot your contacts with heat-coded pins on native Apple/Google Maps.</li>
+            <li>🚀 <strong>Zero-Delay OTA Updates:</strong> Instantly update the app over-the-air via EAS without App Store delays.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="text-align:center;">
+          <div class="card-title" style="justify-content:center;"><span>📲</span> Quick Launch / Connect</div>
+          <div style="background:#fff;padding:16px;border-radius:16px;display:inline-block;margin:16px 0;">
+            <img src="/media/msgmagnet_logo.png" style="width:180px;height:180px;object-fit:cover;border-radius:12px;" alt="QR Code">
+          </div>
+          <div style="font-weight:700;color:#fff;font-size:16px;">App Workspace: msgmagnet-app/</div>
+          <div style="color:var(--text-muted);font-size:13px;margin-top:6px;margin-bottom:16px;">Run <code>npx expo start</code> in the <code>msgmagnet-app</code> directory to launch in iOS Simulator, Android Emulator, or Expo Go on physical device.</div>
+          <button class="btn btn-primary" onclick="triggerTestPush()" style="width:100%;justify-content:center;padding:12px;">
+            🔔 Send Test Push Notification to My Phones
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Team Round-Robin Lead Assignment -->
+    <section id="view-agents" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>WhatsApp Team Multi-Agent Round-Robin</h1>
+          <p>Equally distribute incoming scanned cards, shared leads, and inbound chats across your sales reps.</p>
+        </div>
+        <button class="btn btn-primary" onclick="showAddAgentModal()">+ Add Sales Agent</button>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title"><span>👥</span> Active Sales Reps in Pool</div>
+        <div style="overflow-x:auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Agent Name</th>
+                <th>WhatsApp Number</th>
+                <th>Email</th>
+                <th>Leads Assigned</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="agentsTableBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Loading agents...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16. CRM Connectors & Webhooks -->
+    <section id="view-connectors" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Webhook & CRM Connectors</h1>
+          <p>Real-time two-way synchronization with HubSpot, Salesforce, Zoho CRM, Zapier, and Make.</p>
+        </div>
+        <button class="btn btn-primary" onclick="showAddConnectorModal()">+ New CRM Connector</button>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="card-title"><span>🔌</span> Pre-Built CRM Adapters</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+            <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid var(--card-border);">
+              <div style="font-weight:700;color:#ff7a59;">🟧 HubSpot CRM</div>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">Maps name, company, mobile, warmth score, and pipeline stage into HubSpot Contacts.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid var(--card-border);">
+              <div style="font-weight:700;color:#00a1e0;">☁️ Salesforce Sales Cloud</div>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">Auto-creates Lead objects with source "MsgMagnet WhatsApp CRM".</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid var(--card-border);">
+              <div style="font-weight:700;color:#e42528;">🔴 Zoho CRM</div>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">Direct module push into Zoho Leads with notes and contact details.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid var(--card-border);">
+              <div style="font-weight:700;color:#ff4f00;">⚡ Zapier / Make / n8n</div>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">Instant Catch Hook dispatch for 5,000+ business automations.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📡</span> Configured Webhooks</div>
+          <div id="webhooksList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            <div style="color:var(--text-muted);font-size:13px;">Loading connectors...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. Automated Ghosting Reviver -->
+    <section id="view-reviver" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>Automated WhatsApp "Ghosting Reviver" Sequences</h1>
+          <p>4-Stage behavioral drip sequence that revives cold leads. Automatically disengages the moment the contact replies.</p>
+        </div>
+        <button class="btn btn-primary" onclick="triggerDueRevivers()">⚡ Run Due Drip Messages Now</button>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="card-title"><span>⏳</span> 4-Stage Drip Cadence</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+            <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;border-left:3px solid #3b82f6;">
+              <div style="font-size:13px;font-weight:700;">Stage 1: Day 1 Check-In</div>
+              <p id="reviverStage1Preview" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Hi {{name}}, just following up on our chat earlier. Did you have a chance to look over what we discussed?</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;border-left:3px solid #10b981;">
+              <div style="font-size:13px;font-weight:700;">Stage 2: Day 3 Value-Add</div>
+              <p id="reviverStage2Preview" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Hey {{name}}, thought of you when I saw this update. Would love to share a quick 2-minute overview if you're exploring this.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;border-left:3px solid #f59e0b;">
+              <div style="font-size:13px;font-weight:700;">Stage 3: Day 7 Low-Friction Question</div>
+              <p id="reviverStage3Preview" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Hi {{name}}, quick question: is this still a priority for you this quarter, or should I circle back next month?</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;border-left:3px solid #ef4444;">
+              <div style="font-size:13px;font-weight:700;">Stage 4: Day 14 The 9-Word Breakup</div>
+              <p id="reviverStage4Preview" style="font-size:12px;color:var(--text-muted);margin-top:4px;">Hi {{name}}, have you given up on this project?</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>👥</span> Active Leads in Reviver Drip</div>
+          <div style="overflow-x:auto;margin-top:10px;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Lead Name</th>
+                  <th>Current Stage</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reviverLeadsTable">
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No leads currently in drip queue.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18. 1-Click Interactive Email Signatures -->
+    <section id="view-signatures" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>1-Click Interactive Email Signature Generator</h1>
+          <p>Generate responsive HTML signatures linking to your digital card, WhatsApp, and Apple/Google Wallet.</p>
+        </div>
+        <button class="btn btn-primary" onclick="copySignatureHtml()">📋 Copy HTML Signature</button>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>🎨</span> Select Signature Style</div>
+          <div style="display:flex;gap:10px;margin-bottom:18px;">
+            <button class="btn btn-secondary" id="sigBtnModern" onclick="loadSignatureStyle('modern')">Modern</button>
+            <button class="btn btn-secondary" id="sigBtnCorporate" onclick="loadSignatureStyle('corporate')">Corporate</button>
+            <button class="btn btn-secondary" id="sigBtnSales" onclick="loadSignatureStyle('sales')">High-Converting Sales</button>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">
+            Compatible with Gmail, Microsoft Outlook, Apple Mail, and Thunderbird. Includes clickable WhatsApp quick-chat triggers and mini QR code thumbnails.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>👁️</span> Live Email Preview</div>
+          <div id="signaturePreviewBox" style="background:#ffffff;padding:20px;border-radius:12px;color:#000;min-height:140px;border:1px solid #cbd5e1;overflow-x:auto;">
+            <div style="color:#64748b;font-size:13px;">Generating signature preview...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19. B2B Community & Lead Broadcast Feed -->
+    <section id="view-community" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>B2B Community Feed & Lead Exchange</h1>
+          <p>Broadcast real-time purchasing requirements, discover B2B service offers, and connect instantly on WhatsApp.</p>
+        </div>
+      </div>
+
+      <!-- Post Creation Card -->
+      <div class="card" style="margin-bottom:24px;border:1.5px solid var(--accent);">
+        <div class="card-title"><span>📢</span> Create Community Post / Broadcast Requirement</div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="btnTypeNeed" onclick="setPostType('need')">📥 Need / Requirement (Buy)</button>
+          <button type="button" class="btn btn-secondary" id="btnTypeOffer" onclick="setPostType('offer')">🚀 Service Offer (Sell)</button>
+          <button type="button" class="btn btn-secondary" id="btnTypeQa" onclick="setPostType('qa')">❓ Business Q&A (Ask AI + Peers)</button>
+          <button type="button" class="btn btn-secondary" id="btnTypeGeneral" onclick="setPostType('general')">💬 General Update</button>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="postTitleInput" class="form-control" placeholder="Requirement Headline (e.g. Looking for corrugated packaging suppliers in Gujarat)..." />
+        </div>
+
+        <div class="form-group">
+          <textarea id="postContentInput" class="form-control" rows="3" placeholder="Describe your exact specification, quantity, target timeline, or business challenge..."></textarea>
+        </div>
+
+        <div class="grid-2" style="gap:12px;margin-bottom:14px;">
+          <div class="form-group">
+            <label>Industry Circle</label>
+            <select id="postCircleSelect" class="form-control">
+              <option value="all">🌐 All Ecosystem</option>
+              <option value="saas_tech">💻 Tech, AI & SaaS</option>
+              <option value="real_estate">🏢 Real Estate & Builders</option>
+              <option value="d2c_ecommerce">📦 D2C Brands & Retail</option>
+              <option value="manufacturing">🏭 Manufacturing & B2B</option>
+              <option value="consulting">⚖️ Legal, CA & Consulting</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City / Location (Optional)</label>
+            <input type="text" id="postCityInput" class="form-control" placeholder="e.g. Mumbai, Bengaluru, Delhi NCR" />
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:var(--text-muted);">
+            ⚡ Every post automatically features your 1-Click WhatsApp CTA & Digital Business Card.
+          </span>
+          <button class="btn btn-primary" id="btnSubmitPost" onclick="publishCommunityPost()">
+            🚀 Broadcast to Community
+          </button>
+        </div>
+      </div>
+
+      <!-- Feed Controls: Circle & Type Filters -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;" id="circleFilterPills">
+          <button class="btn btn-primary" onclick="setFeedCircle('all', this)">All Circles</button>
+          <button class="btn btn-secondary" onclick="setFeedCircle('saas_tech', this)">💻 Tech & SaaS</button>
+          <button class="btn btn-secondary" onclick="setFeedCircle('real_estate', this)">🏢 Real Estate</button>
+          <button class="btn btn-secondary" onclick="setFeedCircle('d2c_ecommerce', this)">📦 D2C Brands</button>
+          <button class="btn btn-secondary" onclick="setFeedCircle('manufacturing', this)">🏭 Manufacturing</button>
+          <button class="btn btn-secondary" onclick="setFeedCircle('consulting', this)">⚖️ Consulting</button>
+        </div>
+
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary" id="feedFilterAll" onclick="setFeedType('all', this)">All</button>
+          <button class="btn btn-secondary" id="feedFilterNeeds" onclick="setFeedType('need', this)">📥 Needs</button>
+          <button class="btn btn-secondary" id="feedFilterOffers" onclick="setFeedType('offer', this)">🚀 Offers</button>
+          <button class="btn btn-secondary" id="feedFilterQa" onclick="setFeedType('qa', this)">❓ Q&A</button>
+        </div>
+      </div>
+
+      <!-- Community Feed Stream -->
+      <div id="communityFeedStream" style="display:flex;flex-direction:column;gap:16px;">
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">Loading community feed...</div>
+      </div>
+    </section>
+
+    <!-- 20. Sales Script & Template Vault -->
+    <section id="view-templates" class="view-panel">
+      <div class="header">
+        <div>
+          <h1>WhatsApp Sales Script & Template Vault</h1>
+          <p>Curated, high-converting WhatsApp message frameworks and psychological closing scripts for your sales team.</p>
+        </div>
+      </div>
+
+      <!-- Industry Filter Bar -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;">
+        <button class="btn btn-primary" onclick="filterVaultIndustry('all', this)">All Industries</button>
+        <button class="btn btn-secondary" onclick="filterVaultIndustry('B2B Services', this)">B2B Services</button>
+        <button class="btn btn-secondary" onclick="filterVaultIndustry('Real Estate', this)">Real Estate</button>
+        <button class="btn btn-secondary" onclick="filterVaultIndustry('D2C', this)">D2C Brands</button>
+        <button class="btn btn-secondary" onclick="filterVaultIndustry('Consulting', this)">Consulting</button>
+      </div>
+
+      <!-- Template Grid -->
+      <div id="templateVaultGrid" class="grid-2" style="gap:16px;">
+        <div style="color:var(--text-muted);font-size:13px;">Loading templates...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let authToken = localStorage.getItem("token") || "";
+    let mapInstance = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    // Helper fetch with Auth
+    async function api(url, options = {}) {
+      options.headers = options.headers || {};
+      if (authToken) {
+        options.headers["Authorization"] = "Bearer " + authToken;
+      }
+      const res = await fetch(url, options);
+      return await res.json();
+    }
+
+    // Auto-login check
+    async function ensureAuth() {
+      if (!authToken) {
+        // Fallback login with test credentials if not logged in
+        try {
+          const res = await fetch("/api/user/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: "user@user.com", password: "admin123" })
+          });
+          const data = await res.json();
+          if (data.token) {
+            authToken = data.token;
+            localStorage.setItem("token", authToken);
+          }
+        } catch (e) {
+          console.error("Auto-auth error:", e);
+        }
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(el => el.classList.remove("active"));
+      
+      const btn = event?.currentTarget;
+      if (btn) btn.classList.add("active");
+      
+      const panel = document.getElementById("view-" + tabId);
+      if (panel) panel.classList.add("active");
+
+      if (tabId === "map") {
+        setTimeout(initMap, 200);
+      } else if (tabId === "pipeline") {
+        loadPipeline();
+      } else if (tabId === "events") {
+        loadEvents();
+      } else if (tabId === "tasks") {
+        loadTasks();
+      } else if (tabId === "profile") {
+        loadProfile();
+      } else if (tabId === "google") {
+        loadGoogleConfig();
+      } else if (tabId === "shared") {
+        loadSharedLinks();
+      } else if (tabId === "referrals") {
+        loadReferrals();
+      } else if (tabId === "fairusage") {
+        loadFairUsage();
+      } else if (tabId === "agents") {
+        loadAgents();
+      } else if (tabId === "connectors") {
+        loadConnectors();
+      } else if (tabId === "reviver") {
+        loadReviver();
+      } else if (tabId === "signatures") {
+        loadSignatureStyle("modern");
+      } else if (tabId === "community") {
+        loadCommunity();
+      } else if (tabId === "templates") {
+        loadSalesTemplates();
+      }
+    }
+
+    async function loadFairUsage() {
+      const res = await api("/api/fair_usage/status");
+      if (res.success && res.usage) {
+        document.getElementById("fairScansCount").textContent = `${res.usage.card_scans.used} / ${res.usage.card_scans.limit}`;
+        document.getElementById("fairScansBar").style.width = `${res.usage.card_scans.percentage}%`;
+
+        document.getElementById("fairVoiceCount").textContent = `${res.usage.voice_minutes.used} / ${res.usage.voice_minutes.limit} mins`;
+        document.getElementById("fairVoiceBar").style.width = `${res.usage.voice_minutes.percentage}%`;
+
+        document.getElementById("fairContactsCount").textContent = `${res.usage.contacts.used} / ${res.usage.contacts.limit}`;
+        document.getElementById("fairContactsBar").style.width = `${res.usage.contacts.percentage}%`;
+      }
+    }
+
+    // --- 1. AI Card Scanner ---
+    let selectedCardFile = null;
+    function handleCardUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      selectedCardFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById("scanPreviewImg").src = ev.target.result;
+        document.getElementById("scanPreviewBox").style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function executeScan() {
+      if (!selectedCardFile) {
+        alert("Please upload or snap a business card photo first!");
+        return;
+      }
+
+      const btn = document.getElementById("btnRunScan");
+      btn.disabled = true;
+      btn.innerHTML = "⏳ AI Analyzing Card with Gemini Vision...";
+
+      const formData = new FormData();
+      formData.append("card_image", selectedCardFile);
+      formData.append("event_id", document.getElementById("scanEventSelect").value);
+      formData.append("lead_temperature", document.getElementById("scanTemperatureSelect").value);
+      formData.append("auto_create_contact", "true");
+      formData.append("send_intro_whatsapp", document.getElementById("scanAutoWhatsApp").checked ? "true" : "false");
+
+      try {
+        const res = await fetch("/api/card_scan/upload", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + authToken },
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success && data.parsed) {
+          const p = data.parsed;
+          document.getElementById("scanResultPlaceholder").style.display = "none";
+          document.getElementById("scanResultContent").style.display = "block";
+
+          document.getElementById("resName").textContent = p.name || "Unknown Name";
+          document.getElementById("resTitleCompany").textContent = `${p.job_title || ''} ${p.job_title && p.company ? 'at ' : ''}${p.company || ''}`;
+          document.getElementById("resMobile").textContent = p.mobile || "--";
+          document.getElementById("resEmail").textContent = p.email || "--";
+          document.getElementById("resWebsite").textContent = p.website || "--";
+          document.getElementById("resCity").textContent = p.city || "--";
+          document.getElementById("resAddress").textContent = p.address || "--";
+          document.getElementById("resNotes").textContent = p.notes || (p.services ? p.services.join(", ") : "--");
+
+          if (p.mobile) {
+            const clean = p.mobile.replace(/[^0-9]/g, "");
+            document.getElementById("resWhatsAppBtn").href = `https://wa.me/${clean}`;
+          }
+
+          alert("Success! Business card parsed and contact added to MsgMagnet CRM.");
+        } else {
+          alert("Scan error: " + (data.msg || "Unknown error"));
+        }
+      } catch (err) {
+        alert("Error connecting to server: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "✨ Run AI Scanner & Add to CRM";
+      }
+    }
+
+    // --- 2. Digital Profile ---
+    async function loadProfile() {
+      const persona = document.getElementById("profPersonaType")?.value || "corporate";
+      const data = await api("/api/profile/my?persona=" + persona);
+      if (data.success && data.profile) {
+        const p = data.profile;
+        document.getElementById("profUsername").value = p.username || "";
+        document.getElementById("profDisplayName").value = p.display_name || "";
+        document.getElementById("profTitle").value = p.title || "";
+        document.getElementById("profCompany").value = p.company || "";
+        document.getElementById("profWhatsApp").value = p.whatsapp || "";
+        document.getElementById("profEmail").value = p.email || "";
+        document.getElementById("profWebsite").value = p.website || "";
+        document.getElementById("profLocation").value = p.location || "";
+        document.getElementById("profBio").value = p.bio || "";
+        if (document.getElementById("profLeadCaptureMode")) {
+          document.getElementById("profLeadCaptureMode").checked = !!p.lead_capture_mode;
+        }
+
+        if (data.qrDataUrl) {
+          document.getElementById("profQrImg").src = data.qrDataUrl;
+          document.getElementById("downloadQrBtn").href = data.qrDataUrl;
+        }
+        if (data.profileUrl) {
+          document.getElementById("viewLiveProfileBtn").href = data.profileUrl;
+          document.getElementById("downloadVcardBtn").href = `/api/profile/vcard/${p.username}`;
+          if (document.getElementById("appleWalletPassBtn")) {
+            document.getElementById("appleWalletPassBtn").href = `/api/wallet/apple/${p.username}`;
+          }
+          if (document.getElementById("googleWalletPassBtn")) {
+            document.getElementById("googleWalletPassBtn").href = `/api/wallet/google/${p.username}?redirect=true`;
+          }
+        }
+      }
+    }
+
+    async function saveProfile() {
+      const body = {
+        username: document.getElementById("profUsername").value,
+        display_name: document.getElementById("profDisplayName").value,
+        title: document.getElementById("profTitle").value,
+        company: document.getElementById("profCompany").value,
+        whatsapp: document.getElementById("profWhatsApp").value,
+        email: document.getElementById("profEmail").value,
+        website: document.getElementById("profWebsite").value,
+        location: document.getElementById("profLocation").value,
+        bio: document.getElementById("profBio").value,
+        persona_type: document.getElementById("profPersonaType")?.value || "corporate",
+        lead_capture_mode: document.getElementById("profLeadCaptureMode")?.checked ? 1 : 0,
+      };
+
+      const res = await api("/api/profile/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (res.success) {
+        alert("Digital profile persona updated successfully!");
+        loadProfile();
+      } else {
+        alert("Error saving profile: " + res.msg);
+      }
+    }
+
+    // --- 3. Lead Kanban Pipeline ---
+    async function loadPipeline() {
+      const data = await api("/api/pipeline/board");
+      if (!data.success) return;
+
+      const container = document.getElementById("kanbanBoardContainer");
+      container.innerHTML = "";
+
+      data.stages.forEach(stage => {
+        const items = data.grouped[stage.id] || [];
+        const col = document.createElement("div");
+        col.className = "kanban-col";
+        col.innerHTML = `
+          <div class="kanban-header">
+            <span>${stage.title}</span>
+            <span class="badge badge-warm">${items.length}</span>
+          </div>
+          <div class="kanban-items">
+            ${items.map(item => `
+              <div class="kanban-card">
+                <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${item.name || 'Unknown'}</div>
+                <div style="font-size:12px;color:var(--text-muted);">${item.company || 'No Company'}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+                  <span class="badge badge-${item.lead_temperature || 'warm'}">${item.lead_temperature || 'warm'}</span>
+                  <span style="font-size:11px;color:var(--text-muted);">${item.mobile || ''}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    // --- 4. Event Workspaces ---
+    async function loadEvents() {
+      const data = await api("/api/events");
+      if (!data.success) return;
+
+      const tbody = document.getElementById("eventsTableBody");
+      tbody.innerHTML = "";
+
+      // Also populate scan dropdown
+      const select = document.getElementById("scanEventSelect");
+      select.innerHTML = '<option value="">-- Select Event --</option>';
+
+      data.events.forEach(ev => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${ev.name}</strong></td>
+          <td>${ev.event_date ? new Date(ev.event_date).toLocaleDateString() : 'N/A'}</td>
+          <td>📍 ${ev.location_name || 'N/A'}</td>
+          <td>${ev.total_contacts || 0}</td>
+          <td><span class="badge badge-hot">${ev.hot_contacts || 0}</span></td>
+          <td>
+            <a href="/api/events/${ev.id}/export" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">
+              📥 Export CSV
+            </a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        const opt = document.createElement("option");
+        opt.value = ev.id;
+        opt.textContent = ev.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function openNewEventModal() {
+      const name = prompt("Enter Event Name (e.g. Gitex Global 2026):");
+      if (!name) return;
+      const location_name = prompt("Enter Location (e.g. Dubai World Trade Centre):");
+      
+      api("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, location_name, event_date: new Date().toISOString().split('T')[0] })
+      }).then(res => {
+        if (res.success) {
+          alert("Event created!");
+          loadEvents();
+        }
+      });
+    }
+
+    // --- 5. Voice-to-Task CRM ---
+    async function loadTasks() {
+      const data = await api("/api/tasks");
+      if (!data.success) return;
+
+      const container = document.getElementById("tasksListContainer");
+      container.innerHTML = "";
+
+      if (data.tasks.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No tasks found. Record a voice note above!</p>';
+        return;
+      }
+
+      data.tasks.forEach(t => {
+        const item = document.createElement("div");
+        item.style.cssText = "padding:14px;background:#090d16;border:1px solid var(--card-border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;";
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:700;font-size:14px;color:${t.status === 'done' ? 'var(--text-muted)' : 'var(--text)'};">${t.title}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${t.notes || ''}</div>
+            <div style="font-size:11px;color:var(--accent);margin-top:6px;">Source: ${t.source} | Priority: ${t.priority}</div>
+          </div>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="toggleTask(${t.id}, '${t.status === 'done' ? 'pending' : 'done'}')">
+            ${t.status === 'done' ? '↩ Reopen' : '✓ Done'}
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function toggleTask(id, newStatus) {
+      await api(`/api/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      loadTasks();
+    }
+
+    async function toggleVoiceRecording() {
+      const btn = document.getElementById("btnRecordVoice");
+      const timer = document.getElementById("recordingTimer");
+
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        btn.innerHTML = "🔴 Start Recording (Mic)";
+        timer.style.display = "none";
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
+          uploadAudioBlob(audioBlob);
+        };
+
+        mediaRecorder.start();
+        btn.innerHTML = "⏹️ Stop Recording & Analyze with AI";
+        timer.style.display = "block";
+      } catch (err) {
+        alert("Microphone permission denied or unsupported: " + err.message);
+      }
+    }
+
+    async function uploadVoiceFile(e) {
+      const file = e.target.files[0];
+      if (file) uploadAudioBlob(file);
+    }
+
+    async function uploadAudioBlob(blob) {
+      const status = document.getElementById("voiceProcessStatus");
+      status.style.display = "block";
+
+      const formData = new FormData();
+      formData.append("voice_note", blob, "voice_note.mp3");
+
+      try {
+        const res = await fetch("/api/tasks/voice", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + authToken },
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success && data.extracted) {
+          alert(`AI Voice Processed!\nTask: ${data.extracted.task_title}\nIntent: ${data.extracted.intent}`);
+          loadTasks();
+        } else {
+          alert("Error: " + (data.msg || "Could not process audio"));
+        }
+      } catch (err) {
+        alert("Voice upload error: " + err.message);
+      } finally {
+        status.style.display = "none";
+      }
+    }
+
+    // --- 6. Network Geo-Map with Google Maps Integration ---
+    let currentMapTileLayer = null;
+
+    function changeMapLayer(layerType) {
+      if (!mapInstance) return;
+      if (currentMapTileLayer) {
+        mapInstance.removeLayer(currentMapTileLayer);
+      }
+
+      let tileUrl = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+      let subdomains = ["mt0", "mt1", "mt2", "mt3"];
+
+      if (layerType === "google_hybrid") {
+        tileUrl = "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
+      } else if (layerType === "google_terrain") {
+        tileUrl = "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
+      } else if (layerType === "osm") {
+        tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+        subdomains = ["a", "b", "c"];
+      }
+
+      currentMapTileLayer = L.tileLayer(tileUrl, {
+        maxZoom: 20,
+        subdomains: subdomains,
+        attribution: layerType === "osm" ? "&copy; OpenStreetMap" : "&copy; Google Maps Platform"
+      }).addTo(mapInstance);
+    }
+
+    function initMap() {
+      if (mapInstance) {
+        mapInstance.invalidateSize();
+        return;
+      }
+
+      mapInstance = L.map("networkMap").setView([20.5937, 78.9629], 5);
+      changeMapLayer("google_roadmap");
+
+      api("/api/network_map/contacts").then(data => {
+        if (data.success && data.contacts) {
+          data.contacts.forEach(c => {
+            if (c.lat && c.lng) {
+              const marker = L.marker([c.lat, c.lng]).addTo(mapInstance);
+              marker.bindPopup(`
+                <strong>${c.name}</strong><br>
+                ${c.company || ''}<br>
+                📱 ${c.mobile || ''}<br>
+                📍 ${c.address || ''}
+              `);
+            }
+          });
+        }
+      });
+    }
+
+    // --- 7. Batch Card Scanning ---
+    let selectedBatchFiles = [];
+    function handleBatchSelect(e) {
+      selectedBatchFiles = Array.from(e.target.files);
+      const grid = document.getElementById("batchPreviewGrid");
+      grid.innerHTML = "";
+
+      selectedBatchFiles.forEach((f, idx) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const div = document.createElement("div");
+          div.style.cssText = "background:#090d16;border:1px solid var(--card-border);border-radius:10px;padding:6px;text-align:center;";
+          div.innerHTML = `
+            <img src="${ev.target.result}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</div>
+          `;
+          grid.appendChild(div);
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    async function executeBatchScan() {
+      if (selectedBatchFiles.length === 0) {
+        alert("Please select card images first!");
+        return;
+      }
+
+      const btn = document.getElementById("btnRunBatch");
+      btn.disabled = true;
+      btn.textContent = `⏳ Scanning ${selectedBatchFiles.length} cards with Gemini Vision...`;
+
+      const formData = new FormData();
+      selectedBatchFiles.forEach(f => formData.append("card_images", f));
+      formData.append("lead_temperature", "warm");
+
+      try {
+        const res = await fetch("/api/card_scan/batch", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + authToken },
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success && data.results) {
+          const tbody = document.getElementById("batchResultsTableBody");
+          tbody.innerHTML = "";
+          document.getElementById("batchResultsTableBox").style.display = "block";
+
+          data.results.forEach(r => {
+            const tr = document.createElement("tr");
+            if (r.success && r.parsed) {
+              tr.innerHTML = `
+                <td><strong>${r.parsed.name || 'Unknown'}</strong></td>
+                <td>${r.parsed.company || '--'}</td>
+                <td>${r.parsed.mobile || '--'}</td>
+                <td>${r.parsed.email || '--'}</td>
+                <td><span class="badge badge-warm">Processed ✓</span></td>
+              `;
+            } else {
+              tr.innerHTML = `<td colspan="4">${r.fileName || 'Card'}</td><td><span class="badge" style="background:rgba(239,68,68,0.2);color:#ef4444;">Failed</span></td>`;
+            }
+            tbody.appendChild(tr);
+          });
+          alert(`Batch scan complete! ${data.successful} cards successfully added to CRM.`);
+        }
+      } catch(e) {
+        alert("Batch scan error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🚀 Run Batch AI Scanner on All Cards";
+      }
+    }
+
+    // --- 8. Viral Shared Links ---
+    async function createSharedLink() {
+      const title = prompt("Enter a label for this shared card (e.g. Gitex Booth Share Link):") || "Event Networking Card";
+      const res = await api("/api/shared_card/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+
+      if (res.success && res.shareUrl) {
+        prompt("Copy your viral reciprocal card exchange link:", res.shareUrl);
+        loadSharedLinks();
+      }
+    }
+
+    async function loadSharedLinks() {
+      const box = document.getElementById("sharedLinksBox");
+      const host = window.location.host;
+      const protocol = window.location.protocol;
+      box.innerHTML = `
+        <div style="background:#090d16;padding:16px;border:1px solid var(--card-border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong>Quick Viral Share Link</strong>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">When people view this link, they can submit their contact details right into your CRM.</div>
+            <div style="font-size:13px;color:var(--accent);margin-top:6px;">${protocol}//${host}/s/default</div>
+          </div>
+          <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('${protocol}//${host}/s/default');alert('Link copied to clipboard!');">
+            📋 Copy
+          </button>
+        </div>
+      `;
+    }
+
+    // --- 9. Google Workspace ---
+    async function loadGoogleConfig() {
+      const data = await api("/api/google_sync/status");
+      if (data.success && data.settings) {
+        document.getElementById("gSheetId").value = data.settings.sheet_id || "";
+        document.getElementById("gSheetTab").value = data.settings.sheet_name || "MsgMagnet Leads";
+        document.getElementById("gSyncSheets").checked = !!data.settings.auto_sync_sheets;
+        document.getElementById("gSyncContacts").checked = !!data.settings.auto_sync_contacts;
+        document.getElementById("gSyncCalendar").checked = !!data.settings.auto_sync_calendar;
+      }
+    }
+
+    async function saveGoogleConfig() {
+      const res = await api("/api/google_sync/configure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheet_id: document.getElementById("gSheetId").value,
+          sheet_name: document.getElementById("gSheetTab").value,
+          auto_sync_sheets: document.getElementById("gSyncSheets").checked ? 1 : 0,
+          auto_sync_contacts: document.getElementById("gSyncContacts").checked ? 1 : 0,
+          auto_sync_calendar: document.getElementById("gSyncCalendar").checked ? 1 : 0,
+        })
+      });
+      alert(res.msg || "Saved!");
+    }
+
+    async function previewSheetsData() {
+      const res = await api("/api/google_sync/push_sheets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      if (res.success) {
+        alert(`Ready for Google Sheets! Total rows formatted: ${res.rowCount}`);
+      }
+    }
+
+    async function scheduleGoogleCalendar() {
+      const title = document.getElementById("gCalTitle").value;
+      const start_time = document.getElementById("gCalTime").value;
+      const description = document.getElementById("gCalDesc").value;
+
+      if (!title || !start_time) {
+        alert("Please provide meeting title and start time!");
+        return;
+      }
+
+      const res = await api("/api/google_sync/create_calendar_event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, start_time, description })
+      });
+
+      if (res.success && res.gCalUrl) {
+        window.open(res.gCalUrl, "_blank");
+        alert("Follow-up task created in CRM & Google Calendar opened in new tab!");
+      }
+    }
+
+    // --- 10. Email Templates ---
+    async function saveEmailTemplate() {
+      const title = document.getElementById("emailTmplTitle").value;
+      const subject = document.getElementById("emailTmplSubject").value;
+      const body_html = document.getElementById("emailTmplBody").value;
+
+      if (!title || !subject || !body_html) {
+        alert("Please fill all template fields!");
+        return;
+      }
+
+      const res = await api("/api/email_marketing/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, subject, body_html })
+      });
+
+      alert(res.msg || "Template saved!");
+    }
+
+    async function executeSendEmail() {
+      const to_email = document.getElementById("sendEmailTo").value;
+      const subject = document.getElementById("sendEmailSubject").value;
+      const body_html = document.getElementById("sendEmailBody").value;
+
+      if (!to_email) {
+        alert("Please enter recipient email!");
+        return;
+      }
+
+      const res = await api("/api/email_marketing/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to_email, subject, body_html })
+      });
+
+      alert(res.msg || (res.success ? "Email sent!" : "Failed to send email"));
+    }
+
+    // --- 11. AI Copilot ---
+    async function generateAiReplies() {
+      const last_message = document.getElementById("aiCopilotMsg").value;
+      if (!last_message) {
+        alert("Please enter the prospect message!");
+        return;
+      }
+
+      const contact_name = document.getElementById("aiCopilotName").value;
+      const company = document.getElementById("aiCopilotCompany").value;
+      const box = document.getElementById("aiReplySuggestionsBox");
+      box.innerHTML = '<p style="color:var(--accent);">⏳ Gemini generating smart contextual responses...</p>';
+
+      const res = await api("/api/ai_suggestions/suggest_replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ last_message, contact_name, company })
+      });
+
+      if (res.success && res.suggestions) {
+        box.innerHTML = "";
+        res.suggestions.forEach((text, i) => {
+          const div = document.createElement("div");
+          div.style.cssText = "padding:14px;background:#090d16;border:1px solid var(--card-border);border-radius:12px;";
+          div.innerHTML = `
+            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;">OPTION ${i+1}</div>
+            <div style="font-size:14px;line-height:1.5;color:#e2e8f0;margin-bottom:10px;">${text}</div>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="navigator.clipboard.writeText(\`${text.replace(/`/g, "\\`")}\`);alert('Copied to clipboard!');">
+              📋 Copy to Clipboard
+            </button>
+          `;
+          box.appendChild(div);
+        });
+      }
+    }
+
+    // --- 12. Referrals ---
+    async function loadReferrals() {
+      const res = await api("/api/referrals/my");
+      if (res.success) {
+        document.getElementById("refCodeDisplay").textContent = res.referral_code || "--";
+        document.getElementById("refSignupsDisplay").textContent = res.total_referred || 0;
+        document.getElementById("refEarnedDisplay").textContent = "₹" + (res.total_earned || 0).toFixed(2);
+        document.getElementById("refLinkInput").value = res.referral_link || "";
+      }
+    }
+
+    function copyRefLink() {
+      const inp = document.getElementById("refLinkInput");
+      inp.select();
+      navigator.clipboard.writeText(inp.value);
+      alert("Referral link copied to clipboard!");
+    }
+
+    // --- 13. Test Push Notification Dispatch ---
+    async function triggerTestPush() {
+      const res = await api("/api/notifications/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      if (res.success) {
+        alert("Push notification dispatched via FCM / APNs to all your registered mobile devices!");
+      } else {
+        alert("Push notice: " + (res.msg || "No mobile devices registered yet. Please log into the MsgMagnet mobile app."));
+      }
+    }
+
+    // --- 14. Team Round-Robin Agents ---
+    async function loadAgents() {
+      const res = await api("/api/agents/list");
+      const tbody = document.getElementById("agentsTableBody");
+      if (!tbody) return;
+      if (res.success && res.agents && res.agents.length > 0) {
+        tbody.innerHTML = res.agents.map(a => `
+          <tr>
+            <td><strong>${a.agent_name}</strong></td>
+            <td>${a.agent_whatsapp}</td>
+            <td>${a.agent_email || '--'}</td>
+            <td><span class="badge badge-warm">${a.leads_assigned || 0} leads</span></td>
+            <td>
+              <span class="badge ${a.is_active ? 'badge-hot' : 'badge-cold'}">
+                ${a.is_active ? 'Active' : 'Paused'}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" onclick="toggleAgent(${a.id})">
+                ${a.is_active ? 'Pause' : 'Activate'}
+              </button>
+              <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;color:var(--danger);" onclick="deleteAgent(${a.id})">
+                Delete
+              </button>
+            </td>
+          </tr>
+        `).join("");
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No agents configured. Click "+ Add Sales Agent" to start.</td></tr>`;
+      }
+    }
+
+    async function showAddAgentModal() {
+      const name = prompt("Sales Agent Full Name:");
+      if (!name) return;
+      const wa = prompt("Sales Agent WhatsApp (with country code):");
+      if (!wa) return;
+      const email = prompt("Sales Agent Email (optional):") || "";
+
+      const res = await api("/api/agents/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_name: name, agent_whatsapp: wa, agent_email: email })
+      });
+
+      if (res.success) {
+        alert("Sales rep added to round-robin pool!");
+        loadAgents();
+      } else {
+        alert("Error adding agent: " + res.msg);
+      }
+    }
+
+    async function toggleAgent(id) {
+      await api(`/api/agents/${id}/toggle`, { method: "PUT" });
+      loadAgents();
+    }
+
+    async function deleteAgent(id) {
+      if (!confirm("Are you sure you want to remove this agent?")) return;
+      await api(`/api/agents/${id}`, { method: "DELETE" });
+      loadAgents();
+    }
+
+    // --- 15. CRM Webhooks & Connectors ---
+    async function loadConnectors() {
+      const res = await api("/api/webhooks/list");
+      const list = document.getElementById("webhooksList");
+      if (!list) return;
+      if (res.success && res.webhooks && res.webhooks.length > 0) {
+        list.innerHTML = res.webhooks.map(w => `
+          <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid var(--card-border);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700;color:#fff;">${w.name} <span style="font-size:11px;color:var(--accent);text-transform:uppercase;">[${w.platform}]</span></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;max-width:350px;overflow:hidden;text-overflow:ellipsis;">${w.webhook_url}</div>
+              <div style="font-size:10px;color:${w.last_status === 200 ? '#10b981' : '#f59e0b'};margin-top:4px;">
+                Status: ${w.last_status ? 'HTTP ' + w.last_status : 'Pending'} &bull; ${w.is_active ? 'Active' : 'Paused'}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="testConnector(${w.id})">
+                ⚡ Test
+              </button>
+              <button class="btn btn-secondary" style="padding:6px 10px;font-size:11px;color:var(--danger);" onclick="deleteConnector(${w.id})">
+                Delete
+              </button>
+            </div>
+          </div>
+        `).join("");
+      } else {
+        list.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">No connectors yet. Click "+ New CRM Connector" above to set up HubSpot, Salesforce, Zoho, or Zapier.</div>`;
+      }
+    }
+
+    async function showAddConnectorModal() {
+      const name = prompt("Connector Name (e.g. Production HubSpot Contacts):");
+      if (!name) return;
+      const platform = prompt("Platform (hubspot, salesforce, zoho, zapier):", "hubspot");
+      if (!platform) return;
+      const url = prompt("Webhook / Endpoint URL:");
+      if (!url) return;
+      const auth = prompt("Bearer Token / API Key (optional):") || "";
+
+      const res = await api("/api/webhooks/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, platform, webhook_url: url, auth_header: auth })
+      });
+
+      if (res.success) {
+        alert("CRM Connector configured successfully!");
+        loadConnectors();
+      } else {
+        alert("Error: " + res.msg);
+      }
+    }
+
+    async function testConnector(id) {
+      const res = await api(`/api/webhooks/${id}/test`, { method: "POST" });
+      if (res.success && res.result?.success) {
+        alert(`Test Dispatch Succeeded! (HTTP ${res.result.status}, latency: ${res.result.durationMs}ms)`);
+        loadConnectors();
+      } else {
+        alert(`Test Dispatch Failed: ${res.result?.error || res.msg}`);
+      }
+    }
+
+    async function deleteConnector(id) {
+      if (!confirm("Delete this webhook connector?")) return;
+      await api(`/api/webhooks/${id}`, { method: "DELETE" });
+      loadConnectors();
+    }
+
+    // --- 16. Ghosting Reviver ---
+    async function loadReviver() {
+      const [seqRes, progRes] = await Promise.all([
+        api("/api/reviver/list"),
+        api("/api/reviver/progress")
+      ]);
+
+      if (seqRes.success && seqRes.sequences && seqRes.sequences[0]) {
+        const s = seqRes.sequences[0];
+        if (document.getElementById("reviverStage1Preview")) document.getElementById("reviverStage1Preview").textContent = s.stage_1_message;
+        if (document.getElementById("reviverStage2Preview")) document.getElementById("reviverStage2Preview").textContent = s.stage_2_message;
+        if (document.getElementById("reviverStage3Preview")) document.getElementById("reviverStage3Preview").textContent = s.stage_3_message;
+        if (document.getElementById("reviverStage4Preview")) document.getElementById("reviverStage4Preview").textContent = s.stage_4_message;
+      }
+
+      const tbody = document.getElementById("reviverLeadsTable");
+      if (tbody) {
+        if (progRes.success && progRes.leads && progRes.leads.length > 0) {
+          tbody.innerHTML = progRes.leads.map(l => `
+            <tr>
+              <td><strong>${l.contact_name}</strong><br><span style="font-size:11px;color:var(--text-muted);">${l.contact_mobile}</span></td>
+              <td><span class="badge badge-warm">Stage ${l.current_stage || 1} / 4</span></td>
+              <td>
+                <span class="badge ${l.status === 'replied' ? 'badge-hot' : l.status === 'active' ? 'badge-warm' : 'badge-cold'}">
+                  ${l.status.toUpperCase()}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" onclick="${l.status === 'active' ? `pauseReviver(${l.id})` : `resumeReviver(${l.id})`}">
+                  ${l.status === 'active' ? 'Pause' : 'Resume'}
+                </button>
+              </td>
+            </tr>
+          `).join("");
+        } else {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No leads currently in reviver drip. Leads are auto-enrolled when marked as cold or via card actions.</td></tr>`;
+        }
+      }
+    }
+
+    async function triggerDueRevivers() {
+      const res = await api("/api/reviver/trigger_now", { method: "POST" });
+      if (res.success) {
+        alert(`Reviver engine processed: ${res.result?.processed || 0} messages dispatched.`);
+        loadReviver();
+      } else {
+        alert("Reviver error: " + res.msg);
+      }
+    }
+
+    async function pauseReviver(id) {
+      await api(`/api/reviver/pause/${id}`, { method: "POST" });
+      loadReviver();
+    }
+
+    async function resumeReviver(id) {
+      await api(`/api/reviver/resume/${id}`, { method: "POST" });
+      loadReviver();
+    }
+
+    // --- 17. 1-Click Email Signatures ---
+    let currentSignatureHtml = "";
+    async function loadSignatureStyle(style) {
+      document.getElementById("sigBtnModern")?.classList.remove("btn-primary");
+      document.getElementById("sigBtnCorporate")?.classList.remove("btn-primary");
+      document.getElementById("sigBtnSales")?.classList.remove("btn-primary");
+
+      if (style === "modern") document.getElementById("sigBtnModern")?.classList.add("btn-primary");
+      if (style === "corporate") document.getElementById("sigBtnCorporate")?.classList.add("btn-primary");
+      if (style === "sales") document.getElementById("sigBtnSales")?.classList.add("btn-primary");
+
+      const res = await api("/api/signature/preview?style=" + style);
+      const box = document.getElementById("signaturePreviewBox");
+      if (res.success && res.html) {
+        currentSignatureHtml = res.html;
+        box.innerHTML = res.html;
+      } else {
+        box.innerHTML = `<div style="color:var(--danger);font-size:13px;">${res.msg || 'Please configure your digital business profile first.'}</div>`;
+      }
+    }
+
+    function copySignatureHtml() {
+      if (!currentSignatureHtml) {
+        alert("Please load a signature style first.");
+        return;
+      }
+      navigator.clipboard.writeText(currentSignatureHtml).then(() => {
+        alert("Signature HTML copied to clipboard! Ready to paste into Gmail or Outlook settings.");
+      }).catch(() => {
+        alert("Could not copy automatically. Please copy from preview box.");
+      });
+    }
+
+    // --- 18. B2B Community Feed & Lead Exchange ---
+    let currentPostType = 'need';
+    let currentFeedCircle = 'all';
+    let currentFeedType = 'all';
+    let currentVaultIndustry = 'all';
+
+    function setPostType(type) {
+      currentPostType = type;
+      ['btnTypeNeed', 'btnTypeOffer', 'btnTypeQa', 'btnTypeGeneral'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+          b.classList.remove('btn-primary');
+          b.classList.add('btn-secondary');
+        }
+      });
+      const activeMap = {
+        'need': 'btnTypeNeed',
+        'offer': 'btnTypeOffer',
+        'qa': 'btnTypeQa',
+        'general': 'btnTypeGeneral'
+      };
+      const activeBtn = document.getElementById(activeMap[type]);
+      if (activeBtn) {
+        activeBtn.classList.remove('btn-secondary');
+        activeBtn.classList.add('btn-primary');
+      }
+    }
+
+    function setFeedCircle(circle, btn) {
+      currentFeedCircle = circle;
+      const pills = document.getElementById('circleFilterPills');
+      if (pills) {
+        pills.querySelectorAll('button').forEach(b => {
+          b.classList.remove('btn-primary');
+          b.classList.add('btn-secondary');
+        });
+      }
+      if (btn) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      }
+      loadCommunity();
+    }
+
+    function setFeedType(type, btn) {
+      currentFeedType = type;
+      ['feedFilterAll', 'feedFilterNeeds', 'feedFilterOffers', 'feedFilterQa'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+          b.classList.remove('btn-primary');
+          b.classList.add('btn-secondary');
+        }
+      });
+      if (btn) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      }
+      loadCommunity();
+    }
+
+    async function loadCommunity() {
+      const stream = document.getElementById('communityFeedStream');
+      if (!stream) return;
+      stream.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">⏳ Fetching community posts & deal requirements...</div>';
+
+      try {
+        let q = `/api/community/feed?limit=50`;
+        if (currentFeedCircle && currentFeedCircle !== 'all') q += `&circle_id=${encodeURIComponent(currentFeedCircle)}`;
+        if (currentFeedType && currentFeedType !== 'all') q += `&post_type=${encodeURIComponent(currentFeedType)}`;
+
+        const res = await api(q);
+        if (!res.success || !res.posts || res.posts.length === 0) {
+          stream.innerHTML = `
+            <div style="text-align:center;padding:48px 20px;background:var(--card-bg);border:1px dashed var(--card-border);border-radius:16px;">
+              <div style="font-size:32px;margin-bottom:12px;">📢</div>
+              <div style="font-weight:700;font-size:16px;">No posts in this circle yet</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">Be the first to post a buying need or service offer above!</div>
+            </div>
+          `;
+          return;
+        }
+
+        const typeLabels = {
+          'need': { badge: 'badge-hot', text: '📥 BUYING REQUIREMENT' },
+          'offer': { badge: 'badge-warm', text: '🚀 SERVICE OFFER' },
+          'qa': { badge: 'badge-cold', text: '❓ BUSINESS Q&A' },
+          'event_broadcast': { badge: 'badge-warm', text: '🎪 LIVE EVENT BROADCAST' },
+          'general': { badge: 'badge-cold', text: '💬 COMMUNITY POST' }
+        };
+
+        const circleIcons = {
+          'saas_tech': '💻 Tech & SaaS',
+          'real_estate': '🏢 Real Estate',
+          'd2c_ecommerce': '📦 D2C Brands',
+          'manufacturing': '🏭 Manufacturing',
+          'consulting': '⚖️ Consulting',
+          'all': '🌐 Ecosystem'
+        };
+
+        stream.innerHTML = res.posts.map(post => {
+          const typeMeta = typeLabels[post.post_type] || { badge: 'badge-cold', text: post.post_type.toUpperCase() };
+          const circleName = circleIcons[post.circle_id] || post.circle_id || 'General';
+          const authorInitial = (post.author_name || 'U').charAt(0).toUpperCase();
+          const cleanWhatsApp = (post.author_whatsapp || '').replace(/[^0-9]/g, '');
+          const waText = encodeURIComponent(`Hi ${post.author_name || ''}, I saw your post on MsgMagnet B2B Network regarding: "${post.title}". Let's connect!`);
+          const waUrl = cleanWhatsApp ? `https://wa.me/${cleanWhatsApp}?text=${waText}` : null;
+          const likedClass = post.user_liked ? 'color:#ef4444;' : 'color:var(--text-muted);';
+          const postDate = new Date(post.created_at).toLocaleString();
+
+          return `
+            <div class="card" id="community-post-${post.id}" style="padding:20px;border:1px solid var(--card-border);transition:border-color 0.2s;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:44px;height:44px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;overflow:hidden;flex-shrink:0;">
+                    ${post.author_avatar ? `<img src="${post.author_avatar}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${authorInitial}'">` : authorInitial}
+                  </div>
+                  <div>
+                    <div style="font-weight:700;font-size:15px;color:#fff;display:flex;align-items:center;gap:8px;">
+                      ${post.author_name || 'MsgMagnet Member'}
+                      ${post.author_company ? `<span style="font-weight:500;font-size:12px;color:var(--text-muted);">&bull; ${post.author_company}</span>` : ''}
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);">
+                      ${post.author_title ? post.author_title + ' &bull; ' : ''}${postDate}
+                      ${post.city ? `&bull; 📍 ${post.city}` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                  <span class="badge ${typeMeta.badge}">${typeMeta.text}</span>
+                  <span class="badge badge-cold">${circleName}</span>
+                </div>
+              </div>
+
+              <div style="font-weight:800;font-size:17px;color:#fff;margin-bottom:8px;line-height:1.4;">
+                ${post.title}
+              </div>
+
+              <div style="font-size:14px;color:#cbd5e1;line-height:1.6;white-space:pre-wrap;margin-bottom:16px;">
+                ${post.content}
+              </div>
+
+              <!-- Action Bar -->
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--card-border);flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;gap:12px;align-items:center;">
+                  <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;${likedClass}" onclick="likeCommunityPost(${post.id}, this)">
+                    ❤️ <span class="like-cnt">${post.likes_count || 0}</span>
+                  </button>
+                  <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="togglePostComments(${post.id})">
+                    💬 Comments (${post.comments_count || 0})
+                  </button>
+                  ${post.author_slug ? `
+                    <a href="/p/${post.author_slug}" target="_blank" class="btn btn-secondary" style="padding:6px 12px;font-size:13px;text-decoration:none;">
+                      👤 View Profile
+                    </a>
+                  ` : ''}
+                </div>
+
+                <div style="display:flex;gap:8px;">
+                  ${waUrl ? `
+                    <a href="${waUrl}" target="_blank" class="btn btn-success" style="padding:7px 14px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                      <span>💬</span> WhatsApp Direct Inquiry
+                    </a>
+                  ` : `
+                    <span style="font-size:12px;color:var(--text-muted);align-self:center;">WhatsApp not provided</span>
+                  `}
+                </div>
+              </div>
+
+              <!-- Comments Section (Collapsed by default) -->
+              <div id="comments-container-${post.id}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px dashed var(--card-border);">
+                <div id="comments-list-${post.id}" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
+                  <div style="font-size:12px;color:var(--text-muted);">Loading discussion...</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="comment-input-${post.id}" class="form-control" placeholder="Add an answer or peer response..." style="font-size:13px;" onkeypress="if(event.key==='Enter') submitPostComment(${post.id})" />
+                  <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="submitPostComment(${post.id})">
+                    Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        stream.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load feed: ${err.message}</div>`;
+      }
+    }
+
+    async function publishCommunityPost() {
+      const title = document.getElementById('postTitleInput').value.trim();
+      const content = document.getElementById('postContentInput').value.trim();
+      const circle_id = document.getElementById('postCircleSelect').value;
+      const city = document.getElementById('postCityInput').value.trim();
+
+      if (!title || !content) {
+        alert('Please enter both a title and description for your requirement or offer.');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitPost');
+      btn.disabled = true;
+      btn.textContent = '⏳ Publishing...';
+
+      try {
+        const res = await api('/api/community/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            post_type: currentPostType,
+            title,
+            content,
+            circle_id,
+            city
+          })
+        });
+
+        if (res.success) {
+          alert('🎉 Your post has been broadcast to the MsgMagnet community!');
+          document.getElementById('postTitleInput').value = '';
+          document.getElementById('postContentInput').value = '';
+          document.getElementById('postCityInput').value = '';
+          loadCommunity();
+        } else {
+          alert('Post creation error: ' + (res.msg || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Broadcast to Community';
+      }
+    }
+
+    async function likeCommunityPost(postId, btn) {
+      try {
+        const res = await api(`/api/community/${postId}/like`, { method: 'POST' });
+        if (res.success) {
+          const cnt = btn.querySelector('.like-cnt');
+          if (cnt) cnt.textContent = res.likes_count;
+          if (res.liked) {
+            btn.style.color = '#ef4444';
+          } else {
+            btn.style.color = 'var(--text-muted)';
+          }
+        }
+      } catch (err) {
+        console.error('Like error:', err);
+      }
+    }
+
+    async function togglePostComments(postId) {
+      const container = document.getElementById(`comments-container-${postId}`);
+      if (!container) return;
+      const isHidden = container.style.display === 'none';
+      container.style.display = isHidden ? 'block' : 'none';
+
+      if (isHidden) {
+        const list = document.getElementById(`comments-list-${postId}`);
+        list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading answers...</div>';
+        try {
+          const res = await api(`/api/community/${postId}/comments`);
+          if (res.success && res.comments && res.comments.length > 0) {
+            list.innerHTML = res.comments.map(c => `
+              <div style="background:${c.is_ai_response ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.03)'};padding:12px;border-radius:10px;border:1px solid ${c.is_ai_response ? 'rgba(59,130,246,0.3)' : 'var(--card-border)'};">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-weight:700;font-size:12px;color:${c.is_ai_response ? 'var(--accent)' : '#fff'};">
+                    ${c.is_ai_response ? '🤖 ' : ''}${c.author_name}
+                    ${c.is_ai_response ? '<span class="badge badge-hot" style="margin-left:6px;font-size:9px;">AI PLAYBOOK</span>' : ''}
+                  </span>
+                  <span style="font-size:10px;color:var(--text-muted);">${new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div style="font-size:13px;color:#cbd5e1;white-space:pre-wrap;line-height:1.5;">${c.content}</div>
+              </div>
+            `).join('');
+          } else {
+            list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No answers yet. Share your thoughts or solution below!</div>';
+          }
+        } catch (e) {
+          list.innerHTML = `<div style="color:var(--danger);font-size:12px;">Failed to load comments: ${e.message}</div>`;
+        }
+      }
+    }
+
+    async function submitPostComment(postId) {
+      const input = document.getElementById(`comment-input-${postId}`);
+      if (!input) return;
+      const content = input.value.trim();
+      if (!content) return;
+
+      input.value = '';
+      try {
+        const res = await api(`/api/community/${postId}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        if (res.success) {
+          togglePostComments(postId);
+        } else {
+          alert('Could not post comment: ' + res.msg);
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    // --- 19. WhatsApp Sales Script & Template Vault ---
+    function filterVaultIndustry(industry, btn) {
+      currentVaultIndustry = industry;
+      const container = btn?.parentElement;
+      if (container) {
+        container.querySelectorAll('button').forEach(b => {
+          b.classList.remove('btn-primary');
+          b.classList.add('btn-secondary');
+        });
+      }
+      if (btn) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      }
+      loadSalesTemplates();
+    }
+
+    async function loadSalesTemplates() {
+      const grid = document.getElementById('templateVaultGrid');
+      if (!grid) return;
+      grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading curated sales templates...</div>';
+
+      try {
+        let q = '/api/community/templates';
+        if (currentVaultIndustry && currentVaultIndustry !== 'all') {
+          q += `?industry=${encodeURIComponent(currentVaultIndustry)}`;
+        }
+        const res = await api(q);
+        if (res.success && res.templates && res.templates.length > 0) {
+          grid.innerHTML = res.templates.map(t => {
+            const encodedWa = encodeURIComponent(t.content);
+            const safeContent = JSON.stringify(t.content).replace(/"/g, '&quot;');
+            return `
+              <div class="card" style="background:var(--card-bg);border:1px solid var(--card-border);padding:18px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;">
+                    <div style="font-weight:700;font-size:15px;color:#fff;">${t.title}</div>
+                    <div style="display:flex;gap:4px;flex-shrink:0;">
+                      <span class="badge badge-warm" style="font-size:10px;">${t.industry}</span>
+                      <span class="badge badge-cold" style="font-size:10px;">${t.category}</span>
+                    </div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;font-size:13px;color:#94a3b8;line-height:1.5;white-space:pre-wrap;margin-bottom:14px;font-family:monospace;">${t.content}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                  <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="copyTemplateText(${safeContent})">
+                    📋 Copy Script
+                  </button>
+                  <a href="https://wa.me/?text=${encodedWa}" target="_blank" class="btn btn-success" style="font-size:12px;padding:6px 12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                    <span>💬</span> Test in WA
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No templates found for this industry.</div>';
+        }
+      } catch (err) {
+        grid.innerHTML = `<div style="color:var(--danger);font-size:13px;">Failed to load templates: ${err.message}</div>`;
+      }
+    }
+
+    function copyTemplateText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Sales script copied to clipboard! Paste it straight into any WhatsApp chat or sequence.");
+      }).catch(() => {
+        alert("Copied!");
+      });
+    }
+
+    // Initialization
+    window.addEventListener("DOMContentLoaded", async () => {
+      await ensureAuth();
+      loadEvents();
+    });
+  </script>
+</body>
+</html>

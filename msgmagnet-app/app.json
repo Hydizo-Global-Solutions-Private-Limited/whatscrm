@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "MsgMagnet",
+    "slug": "msgmagnet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0f19"
+    },
+    "scheme": "msgmagnet",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.msgmagnet.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyMsgMagnetDemoKeySample"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "MsgMagnet uses your camera to scan business cards and capture contact details using AI.",
+        "NSMicrophoneUsageDescription": "MsgMagnet uses your microphone for voice-to-CRM task creation.",
+        "NFCReaderUsageDescription": "MsgMagnet uses NFC to read and program digital business card tags."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0f19"
+      },
+      "package": "com.msgmagnet.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyMsgMagnetDemoKeySample"
+        }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.NFC",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow MsgMagnet to access camera to scan physical business cards."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow MsgMagnet to access microphone to record voice CRM tasks."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563eb",
+          "sounds": []
+        }
+      ],
+      "expo-secure-store",
+      "expo-sqlite"
+    ],
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    }
+  }
+}

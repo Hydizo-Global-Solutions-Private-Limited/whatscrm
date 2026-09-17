@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# Expo and React Native
+.expo/
+*/.expo/
+**/android/build/
+**/android/app/build/
+**/android/.gradle/
+*.apk
+*.aab
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Media secrets and temporary card captures
+whatsappcrm/client/public/media/*.json
+whatsappcrm/client/public/media/cards/
