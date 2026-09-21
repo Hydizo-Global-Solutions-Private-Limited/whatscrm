@@ -16,6 +16,13 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (credentials: { email?: string; username?: string; password?: string }) => Promise<{ success: boolean; msg?: string }>;
+  signup: (userData: {
+    name: string;
+    email: string;
+    password: string;
+    mobile_with_country_code: string;
+    acceptPolicy: boolean;
+  }) => Promise<{ success: boolean; msg?: string }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -92,6 +99,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signup = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    mobile_with_country_code: string;
+    acceptPolicy: boolean;
+  }) => {
+    setIsLoading(true);
+    try {
+      const res = await MobileApi.signup(userData);
+      if (res.data && res.data.success) {
+        // Automatically login after successful signup
+        return await login({ email: userData.email, password: userData.password });
+      } else {
+        return { success: false, msg: res.data?.msg || 'Signup failed' };
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.msg || err.message || 'Registration failed';
+      return { success: false, msg };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY);
@@ -118,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, refreshProfile }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -66,6 +66,15 @@ export const MobileApi = {
   login: async (credentials: { email?: string; username?: string; password?: string; pass?: string }) => {
     return api.post('/api/user/login', credentials);
   },
+  signup: async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    mobile_with_country_code: string;
+    acceptPolicy: boolean;
+  }) => {
+    return api.post('/api/user/signup', userData);
+  },
 
   // Card Scanning
   scanCardImage: async (base64Image: string, eventId?: number | null) => {
