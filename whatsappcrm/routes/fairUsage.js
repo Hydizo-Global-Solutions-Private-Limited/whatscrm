@@ -53,13 +53,19 @@ router.get("/status", validateUser, async (req, res) => {
     const scansUsed = scanRows[0]?.cnt || 0;
 
     // 2. Voice Tasks this month
-    const taskRows = await query(
-      `SELECT COUNT(*) as cnt FROM tasks 
-       WHERE uid = ? AND source = 'voice' 
-       AND createdAt >= ?`,
-      [uid, startOfMonth]
-    );
-    const voiceMinutesUsed = taskRows[0]?.cnt || 0;
+    let tasksUsed = 0;
+    try {
+      const taskRows = await query(
+        `SELECT COUNT(*) as cnt FROM agent_task 
+         WHERE (uid = ? OR owner_uid = ?) 
+         AND createdAt >= ?`,
+        [uid, uid, startOfMonth]
+      );
+      tasksUsed = taskRows[0]?.cnt || 0;
+    } catch (taskErr) {
+      tasksUsed = 0;
+    }
+    const voiceMinutesUsed = tasksUsed;
 
     // 3. Total Contacts
     const contactRows = await query(

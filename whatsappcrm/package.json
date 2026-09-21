@@ -46,6 +46,7 @@
     "socket.io": "^4.7.4",
     "stripe": "^12.13.0",
     "telegram": "^2.26.22",
+    "tesseract.js": "^7.0.0",
     "unzipper": "^0.10.14",
     "vm2": "^3.10.2"
   },

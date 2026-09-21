@@ -77,6 +77,9 @@ export const MobileApi = {
   getScanHistory: async () => {
     return api.get('/api/card_scan/history');
   },
+  updateContact: async (contactId: number, data: any) => {
+    return api.put(`/api/card_scan/contact/${contactId}`, data);
+  },
 
   // Leads & Pipeline
   getPipelineBoard: async () => {

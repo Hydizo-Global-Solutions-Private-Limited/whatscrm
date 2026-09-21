@@ -426,4 +426,36 @@ router.post("/batch", validateUser, async (req, res) => {
   }
 });
 
+// ── Update Scanned Contact After Review ──────────────────────────────────────
+router.put("/contact/:id", validateUser, async (req, res) => {
+  try {
+    const uid = req.decode.uid;
+    const contactId = req.params.id;
+    const { name, mobile, email, company, job_title, notes, lead_temperature, pipeline_stage } = req.body;
+
+    const cleanMobile = (mobile || "").replace(/[^\d+]/g, "").trim();
+
+    await query(
+      `UPDATE contact SET 
+        name = COALESCE(?, name),
+        mobile = COALESCE(?, mobile),
+        email = COALESCE(?, email),
+        company = COALESCE(?, company),
+        job_title = COALESCE(?, job_title),
+        notes = COALESCE(?, notes),
+        lead_temperature = COALESCE(?, lead_temperature),
+        pipeline_stage = COALESCE(?, pipeline_stage),
+        updatedAt = NOW()
+       WHERE id = ? AND uid = ?`,
+      [name, cleanMobile, email, company, job_title, notes, lead_temperature, pipeline_stage, contactId, uid]
+    );
+
+    res.json({ success: true, msg: "Contact updated successfully" });
+  } catch (err) {
+    logger.error("Update scanned contact error:", err);
+    res.status(500).json({ success: false, msg: err.message });
+  }
+});
+
 module.exports = router;
+
