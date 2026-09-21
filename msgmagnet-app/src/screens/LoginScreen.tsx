@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,8 +19,14 @@ export const LoginScreen = () => {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('user@user.com');
   const [password, setPassword] = useState('admin123');
-  const [customServerUrl, setCustomServerUrl] = useState(api.defaults.baseURL || 'http://localhost:3010');
+  const [customServerUrl, setCustomServerUrl] = useState(api.defaults.baseURL || 'http://192.168.1.2:3010');
   const [showServerConfig, setShowServerConfig] = useState(false);
+
+  useEffect(() => {
+    if (api.defaults.baseURL) {
+      setCustomServerUrl(api.defaults.baseURL);
+    }
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -28,11 +34,10 @@ export const LoginScreen = () => {
       return;
     }
 
-    if (showServerConfig && customServerUrl) {
-      await setBaseUrl(customServerUrl);
-    }
+    const targetUrl = (customServerUrl && customServerUrl.trim()) ? customServerUrl.trim() : 'http://192.168.1.2:3010';
+    await setBaseUrl(targetUrl);
 
-    const res = await login({ email, password });
+    const res = await login({ email: email.trim(), password });
     if (!res.success) {
       Alert.alert('Login Failed', res.msg || 'Please check your credentials or server connection.');
     }
@@ -108,7 +113,7 @@ export const LoginScreen = () => {
             onPress={() => setShowServerConfig(!showServerConfig)}
           >
             <Text style={styles.toggleServerText}>
-              {showServerConfig ? 'Hide Server Configuration' : '⚙️ Configure Backend Host / IP'}
+              {showServerConfig ? 'Hide Server Configuration' : `⚙️ Server: ${customServerUrl || 'http://192.168.1.2:3010'}`}
             </Text>
           </TouchableOpacity>
 

@@ -4,11 +4,11 @@ import * as SecureStore from 'expo-secure-store';
 // Ambient declaration for React Native runtime global
 declare const __DEV__: boolean;
 
-// Production backend host for MsgMagnet CRM (supports https://msgmagnet.com with local dev fallback)
-export const PRODUCTION_API_URL = 'https://msgmagnet.com';
-export const LOCAL_DEV_API_URL = 'http://127.0.0.1:3010';
+// Production backend host for MsgMagnet CRM (supports local network IP for physical devices)
+export const PRODUCTION_API_URL = 'http://192.168.1.2:3010';
+export const LOCAL_DEV_API_URL = 'http://192.168.1.2:3010';
 
-export const DEFAULT_API_URL = (typeof __DEV__ !== 'undefined' && __DEV__) ? LOCAL_DEV_API_URL : PRODUCTION_API_URL;
+export const DEFAULT_API_URL = 'http://192.168.1.2:3010';
 
 export const TOKEN_STORAGE_KEY = 'msgmagnet_jwt_token';
 export const API_URL_STORAGE_KEY = 'msgmagnet_custom_api_url';
@@ -23,9 +23,10 @@ export const api = axios.create({
 
 // Configure dynamic API base URL
 export const setBaseUrl = async (url: string) => {
-  api.defaults.baseURL = url.replace(/\/+$/, '');
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  api.defaults.baseURL = cleanUrl;
   try {
-    await SecureStore.setItemAsync(API_URL_STORAGE_KEY, api.defaults.baseURL);
+    await SecureStore.setItemAsync(API_URL_STORAGE_KEY, cleanUrl);
   } catch (e) {
     console.warn('Could not persist custom API URL:', e);
   }
@@ -35,11 +36,14 @@ export const setBaseUrl = async (url: string) => {
 export const initApiConfig = async () => {
   try {
     const savedUrl = await SecureStore.getItemAsync(API_URL_STORAGE_KEY);
-    if (savedUrl) {
-      api.defaults.baseURL = savedUrl;
+    if (savedUrl && savedUrl.trim().length > 0) {
+      api.defaults.baseURL = savedUrl.trim().replace(/\/+$/, '');
+    } else {
+      api.defaults.baseURL = DEFAULT_API_URL;
     }
   } catch (e) {
     console.warn('Error reading saved API URL:', e);
+    api.defaults.baseURL = DEFAULT_API_URL;
   }
 };
 
