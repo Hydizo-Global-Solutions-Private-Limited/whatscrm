@@ -31,6 +31,7 @@
         "backgroundColor": "#0b0f19"
       },
       "package": "com.msgmagnet.app",
+      "versionCode": 1,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyMsgMagnetDemoKeySample"

@@ -111,7 +111,16 @@ const app = express();
 const currentDir = process.cwd();
 
 // ─── Parse allowed hostnames from env (protocol & trailing slash agnostic) ───
-const allowedHostnames = [process.env.FRONTENDURI, process.env.BACKURI]
+const defaultProductionHostnames = [
+  "msgmagnet.com",
+  "www.msgmagnet.com",
+  "api.msgmagnet.com",
+  "app.msgmagnet.com",
+  "localhost",
+  "127.0.0.1",
+];
+
+const allowedHostnames = [process.env.FRONTENDURI, process.env.BACKURI, ...defaultProductionHostnames]
   .filter(Boolean)
   .flatMap((o) => o.split(","))
   .map((o) => o.trim())
@@ -143,8 +152,17 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow non-browser / server-to-server requests (no Origin header)
+      // Allow non-browser / server-to-server / mobile native requests (no Origin header)
       if (!origin) return callback(null, true);
+
+      // Support mobile schemes
+      if (
+        origin.startsWith("capacitor://") ||
+        origin.startsWith("ionic://") ||
+        origin.startsWith("expo://")
+      ) {
+        return callback(null, true);
+      }
 
       // Extract hostname — ignores http vs https, trailing slash, and paths
       let incomingHostname;
@@ -156,13 +174,15 @@ app.use(
         return callback(new Error("Not allowed by CORS"));
       }
 
-      const isAllowed = allowedHostnames.includes(incomingHostname);
+      const isAllowed =
+        allowedHostnames.includes(incomingHostname) ||
+        incomingHostname.endsWith(".msgmagnet.com");
 
       if (isAllowed) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key", "api-key"],
     credentials: true,
   }),
 );

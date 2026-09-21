@@ -2,8 +2,11 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// Default backend host (supports physical Android device over USB adb reverse, iOS, & emulator)
-const DEFAULT_API_URL = 'http://127.0.0.1:3010';
+// Production backend host for MsgMagnet CRM (supports https://msgmagnet.com with local dev fallback)
+export const PRODUCTION_API_URL = 'https://msgmagnet.com';
+export const LOCAL_DEV_API_URL = 'http://127.0.0.1:3010';
+
+export const DEFAULT_API_URL = __DEV__ ? LOCAL_DEV_API_URL : PRODUCTION_API_URL;
 
 export const TOKEN_STORAGE_KEY = 'msgmagnet_jwt_token';
 export const API_URL_STORAGE_KEY = 'msgmagnet_custom_api_url';
