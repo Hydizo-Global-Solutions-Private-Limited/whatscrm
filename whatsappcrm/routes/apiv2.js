@@ -777,19 +777,19 @@ router.get("/templates", authenticateApi, async (req, res) => {
       return res.json({ success: true, templates: [] });
     }
 
-    const localTemplates = await query(`SELECT * FROM templet WHERE uid = ?`, [req.uid]);
+    const localTemplates = await query(`SELECT * FROM templets WHERE uid = ?`, [req.uid]);
     res.json({
       success: true,
-      templates: localTemplates.map((t) => ({
+      templates: (localTemplates || []).map((t) => ({
         id: t.id,
-        name: t.name,
-        category: t.category,
-        language: t.language,
-        status: t.status,
+        name: t.title || `template_${t.id}`,
+        category: t.type || "MARKETING",
+        language: "en_US",
+        status: "APPROVED",
       })),
     });
   } catch (err) {
-    logger.error(err);
+    logger.error("Error fetching templates in /api/v1/templates:", err);
     res.status(500).json({ success: false, message: "Error fetching templates." });
   }
 });
@@ -798,13 +798,60 @@ router.get("/templates", authenticateApi, async (req, res) => {
 router.get("/get_logs", authenticateApi, async (req, res) => {
   try {
     const data = await query(
-      `SELECT * FROM beta_api_logs WHERE uid = ? ORDER BY id DESC LIMIT 100`,
+      `SELECT * FROM beta_api_logs WHERE uid = ? ORDER BY id DESC LIMIT 200`,
       [req.uid]
     );
-    res.json({ success: true, logs: data });
+
+    const sanitizeJsonStr = (val, rowStatus) => {
+      if (!val) return "{}";
+      let parsed = null;
+      if (typeof val === "object") {
+        parsed = val;
+      } else if (typeof val === "string") {
+        try {
+          parsed = JSON.parse(val);
+        } catch (e) {
+          return "{}";
+        }
+      }
+      if (!parsed || typeof parsed !== "object") return "{}";
+
+      // Meta Cloud API responses return { messaging_product, contacts, messages: [{ id, message_status }] }
+      // The web UI expects a top-level `success: true` to display 'Success' (in green).
+      if (parsed.success === undefined) {
+        if ((parsed.messages && !parsed.error) || ["sent", "delivered", "read"].includes(rowStatus)) {
+          parsed.success = true;
+        }
+      }
+
+      return JSON.stringify(parsed);
+    };
+
+    const sanitizedLogs = (data || []).map((row) => ({
+      id: row.id,
+      uid: row.uid,
+      msg_id: row.msg_id || "",
+      status: row.status || "sent",
+      request: sanitizeJsonStr(row.request, row.status),
+      response: sanitizeJsonStr(row.response, row.status),
+      createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : new Date().toISOString(),
+    }));
+
+    res.json({
+      success: true,
+      data: sanitizedLogs,
+      logs: sanitizedLogs,
+      total: sanitizedLogs.length,
+    });
   } catch (err) {
-    logger.error(err);
-    res.status(500).json({ success: false, message: "Error fetching logs." });
+    logger.error("Error fetching logs in /get_logs:", err);
+    res.status(500).json({
+      success: false,
+      data: [],
+      logs: [],
+      message: "Error fetching logs.",
+      msg: "Error fetching logs.",
+    });
   }
 });
 
@@ -813,7 +860,11 @@ router.post("/delete_logs", authenticateApi, async (req, res) => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, message: "Valid 'ids' array is required." });
+      return res.status(400).json({
+        success: false,
+        message: "Valid 'ids' array is required.",
+        msg: "Valid 'ids' array is required.",
+      });
     }
 
     const placeholders = ids.map(() => "?").join(",");
@@ -825,11 +876,16 @@ router.post("/delete_logs", authenticateApi, async (req, res) => {
     res.json({
       success: true,
       message: "Logs deleted successfully.",
+      msg: "Logs deleted successfully.",
       count: result.affectedRows,
     });
   } catch (err) {
-    logger.error(err);
-    res.status(500).json({ success: false, message: "Error deleting logs." });
+    logger.error("Error deleting logs in /delete_logs:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting logs.",
+      msg: "Error deleting logs.",
+    });
   }
 });
 
